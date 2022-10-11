@@ -1,0 +1,6 @@
+.secrets
+plan_output_file
+backend.tf
+
+.terraform*
+terraform.tfstate*
