@@ -24,7 +24,7 @@ endif
 ############# VARIABLES ##############
 ######################################
 PLAN_FILE=plan_output_file
-
+TERRAFORM_DIR=terraform
 
 ######################################
 ############## PIPELINE ##############
@@ -32,18 +32,26 @@ PLAN_FILE=plan_output_file
 
 deploy: ## Deploy the infra
 	@$(MAKE) create-backend-file
-	@terraform init
-	@terraform plan -out ${PLAN_FILE}
-	@terraform apply ${PLAN_FILE}
+	@cd ${TERRAFORM_DIR} && \
+		terraform init && \
+		terraform validate && \
+		terraform plan -out ${PLAN_FILE} && \
+		terraform apply ${PLAN_FILE}
 
 destroy: ## Destroy the infra
 	@$(MAKE) create-backend-file
-	@terraform init
-	@terraform destroy -auto-approve
+	@cd ${TERRAFORM_DIR} && \
+		terraform init && \
+		terraform validate && \
+		terraform destroy -auto-approve
 
 create-backend-file:
-	@envsubst < backend.tpl > backend.tf
+	@cd ${TERRAFORM_DIR} && envsubst < backend.tpl > backend.tf
 
+cleanup:
+	@rm -rf ${TERRAFORM_DIR}/.terraform* || true
+	@rm -rf ${TERRAFORM_DIR}/backend.tf || true
+	@rm -rf ${TERRAFORM_DIR}/${PLAN_FILE} || true
 
 ######################################
 ################ HELP ################
