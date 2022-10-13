@@ -18,6 +18,17 @@ resource "aws_route_table" "public" {
   }
 }
 
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.eks.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.natgw.id
+  }
+
+  depends_on = [aws_nat_gateway.natgw]
+}
+
 resource "aws_network_acl" "public" {
   vpc_id = aws_vpc.eks.id
 
@@ -65,7 +76,7 @@ resource "aws_subnet" "private_a" {
 resource "aws_subnet" "private_b" {
   vpc_id     = aws_vpc.eks.id
   cidr_block = "10.10.30.0/24"
- availability_zone = "us-east-1b"
+  availability_zone = "us-east-1b"
  
   tags = {
     Name = "EKS Demo Private B"
@@ -84,6 +95,15 @@ resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
 }
 
+resource "aws_route_table_association" "private" {
+  count = 2
+
+  route_table_id = aws_route_table.private.id
+  subnet_id      = aws_subnet.private_for_eks_node_group[count.index].id
+
+  depends_on = [aws_subnet.private_for_eks_node_group]
+}
+
 ## Nat Gateway
 
 resource "aws_eip" "eip" {
@@ -95,4 +115,20 @@ resource "aws_nat_gateway" "natgw" {
   subnet_id     = aws_subnet.public.id
 
   depends_on = [aws_internet_gateway.eks]
+}
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+resource "aws_subnet" "private_for_eks_node_group" {
+  count = 2
+
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+  cidr_block        = cidrsubnet(aws_vpc.eks.cidr_block, 8, count.index)
+  vpc_id            = aws_vpc.eks.id
+
+  tags = {
+    "kubernetes.io/cluster/${aws_eks_cluster.eks.name}" = "shared"
+  }
 }
