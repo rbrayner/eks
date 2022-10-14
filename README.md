@@ -5,6 +5,7 @@
   - [2. Deploy](#2-deploy)
   - [3. Destroy](#3-destroy)
   - [4. Cleanup deploy files](#4-cleanup-deploy-files)
+  - [5. Connect to the cluster](#5-connect-to-the-cluster)
 
 ## 1. Requirements
 
@@ -31,4 +32,9 @@ make destroy
 ## 4. Cleanup deploy files
 ```shell
 make cleanup
+```
+
+## 5. Connect to the cluster
+```shell
+aws eks --region us-east-1 update-kubeconfig --name EKS_Demo
 ```
